@@ -1,8 +1,10 @@
 import zmq
+import threading
 
 context = zmq.Context()
 poller = zmq.Poller()
 
+# Comunicação Request-Reply
 client_socket = context.socket(zmq.ROUTER)
 client_socket.bind("tcp://*:5555")
 poller.register(client_socket, zmq.POLLIN)
@@ -13,7 +15,20 @@ server_socket.bind("tcp://*:5556")
 poller.register(server_socket, zmq.POLLIN)
 server_count = 0
 
-print("broker")
+# Thread para Comunicação Publisher-Subscriber
+def proxy():
+    global context
+    pub = context.socket(zmq.XPUB)
+    pub.bind("tcp://*:5557")
+
+    sub = context.socket(zmq.XSUB)
+    sub.bind("tcp://*:5558")
+    zmq.proxy(pub, sub)
+
+thread = threading.Thread(target=proxy, daemon=True)
+thread.start()
+
+print("Broker")
 
 while True:
     socks = dict(poller.poll())
@@ -37,3 +52,7 @@ while True:
         else:
             client_socket.send(message)
         print(f"Server messages: {server_count}")
+
+pub.close()
+sub.close()
+context.close()
