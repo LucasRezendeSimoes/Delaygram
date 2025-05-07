@@ -28,7 +28,7 @@ def proxy():
 thread = threading.Thread(target=proxy, daemon=True)
 thread.start()
 
-print("Broker")
+print("\033[31mBroker")
 
 while True:
     socks = dict(poller.poll())

@@ -15,21 +15,16 @@ user = {
 }
 
 """
-PUBLICAÇÂO:
-Cliente Geraldo enviando uma publicação para todos que seguem ele
-tag: conteúdo
-0000: mensagem
+PUBLICAÇÃO:
+0:id:conteudo --split-> [remetente, tag, conteudo]
 
 MENSAGEM PRIVADA:
-Cliente Rogério enviando uma mensagem apenas para o cliente Geraldo
-tag(tipo de msg): remetente: conteúdo
-0000MSG: 0001:mensagem
-
-------------------------------------------------------------------------
-0:id:conteudo --split-> [remetente, tag, conteudo]
 1:id:destinatario:conteudo --split-> [remetente, tag, destinatario, conteudo]
+
+SUBSCRIÇÃO:
 2:id:quem (Inscrito se desinscreve e vice versa)
 
+ERRO:
 Oi glr = ERRO (Msg sem tag)
 """
 
@@ -48,17 +43,17 @@ def publicacoes():
 thread = threading.Thread(target=publicacoes, daemon=True)
 thread.start()
 
-print("Cliente - 1")
-tags = ("0", "1", "2")
+print("\033[32mCliente - 0")
+tags = ("0", "1", "2") # Pub, Dm, Sub
 
 while True:
     msg = ""
 
+    print("""0: Publicação\n1: Mensagem privada\n2: Subscrição""")
+
     # Usuário adiciona Tag
     while True:
-        print(user['mailbox'])
         tag = input("Digite o tipo de mensagem: ")
-        print("""0: Publicação\n1: Mensagem privada\n2: Subscrição""")
         if tag not in tags:
             print("TAG INVÁLIDA!")
         else:
@@ -79,12 +74,21 @@ while True:
         conteudo = input("Digite a mensagem: ")
         msg += f":{conteudo}"
 
-    elif int(tag) == 2: # Subscrição
-        destinatario = input("Enviar para: ")
-        msg += f":{destinatario}"
+    elif int(tag) == 2:  # Subscrição
+        alvo = input("Usuário: ")
+        msg += f":{alvo}"
+
+        if alvo in user["seguindo"]:
+            user["seguindo"].remove(alvo)
+            print(f"Você parou de seguir {alvo}")
+        else:
+            user["seguindo"].append(alvo)
+            print(f"Você começou a seguir {alvo}")
 
 
     #print(msg)
     socket.send_string(msg) # envia mensagem (request)
     mensagem = socket.recv_string() # recebe mensagem (reply)
     #print(f"{mensagem}  {user['mailbox']}")
+
+    print("Caixa de mensagens:\n",user['mailbox'])
