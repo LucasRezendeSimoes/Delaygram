@@ -19,11 +19,11 @@ while True:
         resposta = "Publicação enviada!"
     elif message[0] == '1':
         dados = message.split(':',3)
-        msg = f"{dados[2]}MSG:{dados[1]}:{dados[3]}"
+        msg = f"{dados[2]}:{dados[1]}:{dados[3]}"
         resposta = f"Mensagem enviada para {dados[2]}"
     elif message[0] == '2':
         dados = message.split(':',2)
-        resposta = f"Subscrição modificada para {dados[2]}"
+        #resposta = f"Subscrição modificada para {dados[2]}"
     else:
         resposta = "Erro: tipo de mensagem desconhecido."
 
@@ -31,6 +31,7 @@ while True:
     pub.send_string(msg)
 
 
+"""
     if message[0] == '0':
         dados = message.split(':',2)
         msg = f"{dados[1]}:{dados[2]}"
@@ -41,3 +42,4 @@ while True:
         dados = message.split(':',2)
     
     pub.send_string(msg)
+"""

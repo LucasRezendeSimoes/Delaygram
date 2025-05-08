@@ -91,4 +91,4 @@ while True:
     mensagem = socket.recv_string() # recebe mensagem (reply)
     #print(f"{mensagem}  {user['mailbox']}")
 
-    print("Caixa de mensagens:\n",user['mailbox'])
+    print(f"Caixa de mensagens:\n{user['mailbox']}")
