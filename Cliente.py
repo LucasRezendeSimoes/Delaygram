@@ -16,10 +16,10 @@ user = {
 
 """
 PUBLICAÇÃO:
-0:id:conteudo --split-> [remetente, tag, conteudo]
+0:id:conteudo --split-> [tag, remetente, conteudo]
 
 MENSAGEM PRIVADA:
-1:id:destinatario:conteudo --split-> [remetente, tag, destinatario, conteudo]
+1:id:destinatario:conteudo --split-> [tag, remetente, destinatario, conteudo]
 
 SUBSCRIÇÃO:
 2:id:quem (Inscrito se desinscreve e vice versa)
@@ -32,11 +32,12 @@ def publicacoes():
     global context, user
     sub = context.socket(zmq.SUB)
     sub.connect("tcp://localhost:5557")
-    sub.setsockopt_string(zmq.SUBSCRIBE, "%sMSG"%user['id']) # Contato do cliente
-    sub.setsockopt_string(zmq.SUBSCRIBE, "0000") # Contato do cliente
+    sub.setsockopt_string(zmq.SUBSCRIBE, "MSG%s"%user['id']) # Contato do cliente
+    sub.setsockopt_string(zmq.SUBSCRIBE, "0001")
 
     while True:
         msg = sub.recv_string()
+
         user['mailbox'].append(msg)
 
 
@@ -44,12 +45,13 @@ thread = threading.Thread(target=publicacoes, daemon=True)
 thread.start()
 
 print("\033[32mCliente - 0")
-tags = ("0", "1", "2") # Pub, Dm, Sub
+tags = ("0", "1", "2", "3") # Pub, Dm, Sub, Att
 
 while True:
     msg = ""
 
-    print("""0: Publicação\n1: Mensagem privada\n2: Subscrição""")
+    print(f"Caixa de mensagens:\n{user['mailbox']}")
+    print("""0: Publicação\n1: Mensagem privada\n2: Subscrição\n3: Atualizar""")
 
     # Usuário adiciona Tag
     while True:
@@ -59,36 +61,36 @@ while True:
         else:
             msg += tag
             break
+    
+    if int(tag) != 3:
+        # Adiciona ID
+        msg += f":{user['id']}"
 
-    # Adiciona ID
-    msg += f":{user['id']}"
+        # Complementos
+        if int(tag) == 0: # Publicação
+            conteudo = input("Digite a mensagem: ")
+            msg += f":{conteudo}"
 
-    # Complementos
-    if int(tag) == 0: # Publicação
-        conteudo = input("Digite a mensagem: ")
-        msg += f":{conteudo}"
+        elif int(tag) == 1: # Mensagem privada
+            destinatario = input("Enviar para: ")
+            msg += f":{destinatario}"
+            conteudo = input("Digite a mensagem: ")
+            msg += f":{conteudo}"
 
-    elif int(tag) == 1: # Mensagem privada
-        destinatario = input("Enviar para: ")
-        msg += f":{destinatario}"
-        conteudo = input("Digite a mensagem: ")
-        msg += f":{conteudo}"
+        elif int(tag) == 2:  # Subscrição
+            alvo = input("Usuário: ")
+            msg += f":{alvo}"
 
-    elif int(tag) == 2:  # Subscrição
-        alvo = input("Usuário: ")
-        msg += f":{alvo}"
-
-        if alvo in user["seguindo"]:
-            user["seguindo"].remove(alvo)
-            print(f"Você parou de seguir {alvo}")
-        else:
-            user["seguindo"].append(alvo)
-            print(f"Você começou a seguir {alvo}")
+            if alvo in user["seguindo"]:
+                user["seguindo"].remove(alvo)
+                print(f"Você parou de seguir {alvo}")
+            else:
+                user["seguindo"].append(alvo)
+                print(f"Você começou a seguir {alvo}")
 
 
-    #print(msg)
-    socket.send_string(msg) # envia mensagem (request)
-    mensagem = socket.recv_string() # recebe mensagem (reply)
-    #print(f"{mensagem}  {user['mailbox']}")
-
-    print(f"Caixa de mensagens:\n{user['mailbox']}")
+        #print(msg)
+        socket.send_string(msg) # envia mensagem (request)
+        mensagem = socket.recv_string() # recebe mensagem (reply)
+        #print(f"{mensagem}  {user['mailbox']}")
+    print("\n\n")

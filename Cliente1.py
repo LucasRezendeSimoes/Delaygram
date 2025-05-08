@@ -5,82 +5,90 @@ context = zmq.Context()
 socket = context.socket(zmq.REQ)
 socket.connect("tcp://localhost:5555") # Utilizado para enviar mensagens aos servidores.
 
+# Informações do cliente
 user = {
-    "id": "0000",
+    "id": "0001",
+    "name": "Ronaldo",
     "time": 0,
+    "seguindo":[],
     "mailbox": []
 }
+
+"""
+PUBLICAÇÃO:
+0:id:conteudo --split-> [remetente, tag, conteudo]
+
+MENSAGEM PRIVADA:
+1:id:destinatario:conteudo --split-> [remetente, tag, destinatario, conteudo]
+
+SUBSCRIÇÃO:
+2:id:quem (Inscrito se desinscreve e vice versa)
+
+ERRO:
+Oi glr = ERRO (Msg sem tag)
+"""
 
 def publicacoes():
     global context, user
     sub = context.socket(zmq.SUB)
     sub.connect("tcp://localhost:5557")
-    sub.setsockopt_string(zmq.SUBSCRIBE, "%sMSG"%user['id'])
+    sub.setsockopt_string(zmq.SUBSCRIBE, "MSG%s"%user['id']) # Contato do cliente
 
     while True:
         msg = sub.recv_string()
-        print(msg)
         user['mailbox'].append(msg)
 
 
 thread = threading.Thread(target=publicacoes, daemon=True)
 thread.start()
 
-print("Cliente - 1")
+print("\033[32mCliente - 1")
+tags = ("0", "1", "2", "3") # Pub, Dm, Sub
 
 while True:
-    msg = input("Digite a mensagem: ")
-    socket.send_string(f"{user["id"]}:{user["time"]}:{msg}") # envia mensagem (request)
-    mensagem = socket.recv_string() # recebe mensagem (reply)
-    print(f"{mensagem}  {user['mailbox']}")
+    msg = ""
 
-"""
-#-------------------------------------------------------
-import zmq
-import threading
+    print(f"Caixa de mensagens:\n{user['mailbox']}")
+    print("""0: Publicação\n1: Mensagem privada\n2: Subscrição\n3: Atualizar""")
 
-context = zmq.Context()
-
-# Socket REQ para enviar mensagens ao servidor
-socket = context.socket(zmq.REQ)
-socket.connect("tcp://localhost:5555")  # canal REQ/REP via broker
-
-# SUB para receber publicações
-sub = context.socket(zmq.SUB)
-sub.connect("tcp://localhost:5557")  # canal XPUB (do proxy)
-
-print("Cliente: 1")
-
-# Informações do usuário
-user = {
-    "id": "0001",
-    "time": 0,
-    "seguindo": ["0002"],  # IDs de usuários que ele segue
-    "mailbox": []
-}
-
-# Adiciona subscriptions aos IDs seguidos
-for seguido_id in user["seguindo"]:
-    sub.setsockopt_string(zmq.SUBSCRIBE, f"{seguido_id}:POST")
-
-def escutar_publicacoes():
+    # Usuário adiciona Tag
     while True:
-        msg = sub.recv_string()
-        print(f"[PUBLICAÇÃO RECEBIDA] {msg}")
+        tag = input("Digite o tipo de mensagem: ")
+        if tag not in tags:
+            print("TAG INVÁLIDA!")
+        else:
+            msg += tag
+            break
+    
+    if int(tag) != 3:
+        # Adiciona ID
+        msg += f":{user['id']}"
 
-# Iniciar thread para escutar publicações
-threading.Thread(target=escutar_publicacoes, daemon=True).start()
+        # Complementos
+        if int(tag) == 0: # Publicação
+            conteudo = input("Digite a mensagem: ")
+            msg += f":{conteudo}"
 
-print("Cliente iniciado")
+        elif int(tag) == 1: # Mensagem privada
+            destinatario = input("Enviar para: ")
+            msg += f":{destinatario}"
+            conteudo = input("Digite a mensagem: ")
+            msg += f":{conteudo}"
 
-# Loop principal de envio de mensagens
-while True:
-    texto = input("Digite a mensagem a publicar: ")
-    user["time"] += 1
-    mensagem = f"POST:{user['id']}:{user['time']}:{texto}"
-    socket.send_string(mensagem)
-    resposta = socket.recv_string()
-    print(f"Servidor respondeu: {resposta}")    
-    resposta = socket.recv_string()
-    print(f"Servidor respondeu: {resposta}")
-"""
+        elif int(tag) == 2:  # Subscrição
+            alvo = input("Usuário: ")
+            msg += f":{alvo}"
+
+            if alvo in user["seguindo"]:
+                user["seguindo"].remove(alvo)
+                print(f"Você parou de seguir {alvo}")
+            else:
+                user["seguindo"].append(alvo)
+                print(f"Você começou a seguir {alvo}")
+
+
+        #print(msg)
+        socket.send_string(msg) # envia mensagem (request)
+        mensagem = socket.recv_string() # recebe mensagem (reply)
+        #print(f"{mensagem}  {user['mailbox']}")
+    print("\n\n")
