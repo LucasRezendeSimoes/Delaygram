@@ -1,8 +1,9 @@
 import zmq
+import threading
+from time import sleep
 
 context = zmq.Context()
 socket = context.socket(zmq.REP)
-socketh = context.socket(zmq.REQ)
 socket.connect("tcp://localhost:5556") # conecta no broker local
 
 ctx = zmq.Context.instance()
@@ -10,6 +11,18 @@ pub = ctx.socket(zmq.PUB)
 pub.connect("tcp://localhost:5558")
 
 print("\033[34mServer - 1")
+
+def heartbeat():
+    global context
+    socketh = context.socket(zmq.DEALER)
+    socketh.connect("tcp://localhost:5559")
+
+    while(True):
+        socketh.send_multipart([b'Tudum'])
+        sleep(1)
+
+thread = threading.Thread(target=heartbeat, daemon=True)
+thread.start()
 
 while True:
     message = socket.recv_string()
