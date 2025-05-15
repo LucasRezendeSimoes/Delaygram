@@ -1,4 +1,5 @@
 import zmq
+import time
 import threading
 
 context = zmq.Context()
@@ -30,26 +31,37 @@ def proxy():
 # Thread para tratar o heartbeat
 def heartbeat():
     global context, servidores
-    socketh = context.socket(zmq.Router)
-    socketh.bind("tcp://localhost:5559") # conecta no Servidor
+    socketh = context.socket(zmq.ROUTER)
+    socketh.bind("tcp://localhost:5559")
     poller.register(socketh, zmq.POLLIN)
 
-    while(True):
-        if socketh.poll(1000): # Verifica por um segundo se há heartbeats, resetando o contador do servidor caso haja
+    while True:
+        if socketh.poll(1000):  # Espera 1 segundo
             batida = socketh.recv_multipart()
-            servidores[batida[0]] = 5
-        
-        for i in servidores.keys(): # Desconta do contador de cada servidor e retira o servidor da lista de servidores caso o contador chegue em 0
-            if(servidores[i] <= 0):
-                del servidores[i]
-            else:
-                servidores[i] -= 1
+            id_servidor = batida[0]
+            print(f"[💓HEARTBEAT RECEBIDO] De {id_servidor}")
+            servidores[id_servidor] = time.time()  # salva timestamp atual
+
+        # Verifica quais servidores passaram do tempo de timeout
+        agora = time.time()
+        removidos = []
+        for id_servidor, ultimo_heartbeat in servidores.items():
+            if agora - ultimo_heartbeat > 10:  # 10 segundos sem heartbeat
+                print(f"[SERVIDOR REMOVIDO] {id_servidor}")
+                removidos.append(id_servidor)
+
+        for r in removidos:
+            del servidores[r]
+
+        print("Servidores ativos:", list(servidores.keys()))
+        time.sleep(1)
+
         
         
 
 TProxy = threading.Thread(target=proxy, daemon=True)
-THeartbeat = threading.Thread(target=heartbeat, daemon=True)
 TProxy.start()
+THeartbeat = threading.Thread(target=heartbeat, daemon=True)
 THeartbeat.start()
 
 print("\033[31mBroker")
