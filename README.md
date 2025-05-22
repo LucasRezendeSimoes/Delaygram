@@ -6,3 +6,9 @@ Lucas Rezende Simões
 
 Fernando Milani Venerando
 - RA: 24.122.063-1
+
+Lucas
+- RA: 24.122.
+
+Rômulo
+- RA: 42.122.
