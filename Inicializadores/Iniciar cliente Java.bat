@@ -1,1 +1,1 @@
-java -jar "Cliente Java\target\Cliente-1.0-SNAPSHOT-jar-with-dependencies.jar"
+start cmd /k java -jar "Cliente Java\target\Cliente-1.0-SNAPSHOT-jar-with-dependencies.jar"

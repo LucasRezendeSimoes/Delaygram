@@ -80,7 +80,7 @@ def consultar_gerente(horario_cliente):
 
     
 def possivelmente_alterar_horario(horario_original):
-    if random.random() < 0.3:  # 30% de chance de alterar
+    if random.random() < 0:  # 30% de chance de alterar
         desvio = random.randint(-300, 300)  # até 5 minutos
         horario_alterado = horario_original + desvio
         print(f"[HORÁRIO ALTERADO] Original: {horario_original:.2f} | Alterado: {horario_alterado:.2f}")

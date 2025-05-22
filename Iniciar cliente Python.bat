@@ -1,1 +1,0 @@
-start cmd /k python "Cliente Python\Cliente1.py"
