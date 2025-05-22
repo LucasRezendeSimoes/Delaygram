@@ -1,48 +1,50 @@
-#include <zmq.h>
-#include <iostream>
-#include <string>
-#include <vector>
-#include <thread>
-#include <sstream>
-#include <algorithm>
+#include <iostream> // Bibioteca base
+#include <zmq.h> // Usada para realizar a troca de mensagens com os servidores
+#include <string> // Usada para manipular strings
+#include <vector> // Usado para armazenar as informações do mailbox e seguindo
+#include <thread> // Manipulação de threads para a caixa de entrada
+#include <algorithm> // Usado para facilitar a procura na lista de pessoas seguindo
 
-// Representação do usuário
+using namespace std;
+
+// Dados do usuário
 struct User {
-    std::string id = "0000";
-    std::string name = "Geraldo";
+    string id = "0000";
+    string name = "Geraldo";
     int time = 0;
-    std::vector<std::string> seguindo;
-    std::vector<std::string> mailbox;
+    vector<string> seguindo;
+    vector<string> mailbox;
 };
 
 User user;
 
-// Thread de recebimento de mensagens publicadas
+// Thread para a caixa de entrada
 void publicacoes(void* context) {
     void* sub = zmq_socket(context, ZMQ_SUB);
     zmq_connect(sub, "tcp://localhost:5557");
 
-    std::string filtro1 = "MSG" + user.id;
-    std::string filtro2 = "0001";
+    string contato = "MSG" + user.id;
+    zmq_setsockopt(sub, ZMQ_SUBSCRIBE, contato.c_str(), contato.size());
 
-    zmq_setsockopt(sub, ZMQ_SUBSCRIBE, filtro1.c_str(), filtro1.size());
-    zmq_setsockopt(sub, ZMQ_SUBSCRIBE, filtro2.c_str(), filtro2.size());
+    string filtro2 = "0001"; // Debug
+    zmq_setsockopt(sub, ZMQ_SUBSCRIBE, filtro2.c_str(), filtro2.size());// Debug
 
     while (true) {
-        char buffer[512] = {0};
-        int recv_len = zmq_recv(sub, buffer, sizeof(buffer) - 1, 0);
+        char msg[512] = {0};
+        int recv_len = zmq_recv(sub, msg, sizeof(msg) - 1, 0);
         if (recv_len > 0) {
-            user.mailbox.emplace_back(buffer);
+            user.mailbox.emplace_back(msg);
         }
     }
 
     zmq_close(sub);
 }
 
+// Usado para debug
 void print_mailbox() {
-    std::cout << "Caixa de mensagens:\n";
+    cout << "Caixa de mensagens:\n";
     for (const auto& msg : user.mailbox) {
-        std::cout << " - " << msg << std::endl;
+        cout << " - " << msg << endl;
     }
 }
 
@@ -51,24 +53,24 @@ int main() {
     void* requester = zmq_socket(context, ZMQ_REQ);
     zmq_connect(requester, "tcp://localhost:5555");
 
-    std::thread th(publicacoes, context);
-    th.detach(); // não vamos mais nos preocupar com a thread
+    thread th(publicacoes, context);
+    th.detach(); // Deixa a thread rodando por conta própria
 
-    std::cout << "\033[32mCliente - 0\033[0m" << std::endl;
-    const std::vector<std::string> tags = {"0", "1", "2", "3"};
+    cout << "\033[32mCliente - 0\033[0m" << endl;
+    const vector<string> tags = {"0", "1", "2", "3"};
 
     while (true) {
-        std::string msg;
+        string msg;
         print_mailbox();
 
-        std::cout << "0: Publicacao\n1: Mensagem privada\n2: Subscricao\n3: Atualizar" << std::endl;
+        cout << "0: Publicacao\n1: Mensagem privada\n2: Subscricao\n3: Atualizar" << endl;
 
-        std::string tag;
+        string tag;
         while (true) {
-            std::cout << "Digite o tipo de mensagem: ";
-            std::getline(std::cin, tag);
-            if (std::find(tags.begin(), tags.end(), tag) == tags.end()) {
-                std::cout << "TAG INVALIDA!" << std::endl;
+            cout << "Digite o tipo de mensagem: ";
+            getline(cin, tag);
+            if (find(tags.begin(), tags.end(), tag) == tags.end()) {
+                cout << "TAG INVALIDA!" << endl;
             } else {
                 msg += tag;
                 break;
@@ -79,30 +81,30 @@ int main() {
             msg += ":" + user.id;
 
             if (tag == "0") {
-                std::string conteudo;
-                std::cout << "Digite a mensagem: ";
-                std::getline(std::cin, conteudo);
+                string conteudo;
+                cout << "Digite a mensagem: ";
+                getline(cin, conteudo);
                 msg += ":" + conteudo;
             } else if (tag == "1") {
-                std::string destinatario, conteudo;
-                std::cout << "Enviar para: ";
-                std::getline(std::cin, destinatario);
-                std::cout << "Digite a mensagem: ";
-                std::getline(std::cin, conteudo);
+                string destinatario, conteudo;
+                cout << "Enviar para: ";
+                getline(cin, destinatario);
+                cout << "Digite a mensagem: ";
+                getline(cin, conteudo);
                 msg += ":" + destinatario + ":" + conteudo;
             } else if (tag == "2") {
-                std::string alvo;
-                std::cout << "Usuario: ";
-                std::getline(std::cin, alvo);
+                string alvo;
+                cout << "Usuario: ";
+                getline(cin, alvo);
                 msg += ":" + alvo;
 
-                auto it = std::find(user.seguindo.begin(), user.seguindo.end(), alvo);
+                auto it = find(user.seguindo.begin(), user.seguindo.end(), alvo);
                 if (it != user.seguindo.end()) {
                     user.seguindo.erase(it);
-                    std::cout << "Voce parou de seguir " << alvo << std::endl;
+                    cout << "Voce parou de seguir " << alvo << endl;
                 } else {
                     user.seguindo.push_back(alvo);
-                    std::cout << "Voce comecou a seguir " << alvo << std::endl;
+                    cout << "Voce comecou a seguir " << alvo << endl;
                 }
             }
 
@@ -110,10 +112,9 @@ int main() {
 
             char resposta[512] = {0};
             zmq_recv(requester, resposta, sizeof(resposta) - 1, 0);
-            // Pode imprimir a resposta se desejar
         }
 
-        std::cout << "\n\n";
+        cout << "\n\n";
     }
 
     zmq_close(requester);
