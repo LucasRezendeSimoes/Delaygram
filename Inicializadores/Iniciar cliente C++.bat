@@ -1,0 +1,1 @@
+start cmd /k "Cliente C\Cliente.exe"
