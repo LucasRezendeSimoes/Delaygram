@@ -8,8 +8,8 @@ socket.connect("tcp://localhost:5555")  # Envia mensagens ao broker
 
 # Informações do cliente
 user = {
-    "id": "0002",
-    "name": "Mafalda",
+    "id": "0003",
+    "name": "Augusto",
     "time": 0,
     "seguindo": [],
     "mailbox": []
@@ -67,7 +67,7 @@ def atualizar_subscricoes():
 # Inicializa as subscrições
 atualizar_subscricoes()
 
-print("\033[32mCliente - 2")
+print("\033[32mCliente - 3")
 tags = ("0", "1", "2", "3")  # Pub, Dm, Sub, Att
 
 while True:

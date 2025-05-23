@@ -22,7 +22,7 @@ atomic<bool> sub_stop(false);
 thread sub_thread;
 void* sub_socket = nullptr;
 
-// Gera timestamp como no Python
+// Gera timestamp
 string get_timestamp() {
     auto now = chrono::system_clock::now();
     auto secs = chrono::system_clock::to_time_t(now);
@@ -93,7 +93,7 @@ int main() {
 
     atualizar_subscricoes(context);
 
-    cout << "Cliente - 0" << endl;
+    cout << "Cliente - 6" << endl;
     const vector<string> tags = {"0", "1", "2", "3"};
 
     while (true) {

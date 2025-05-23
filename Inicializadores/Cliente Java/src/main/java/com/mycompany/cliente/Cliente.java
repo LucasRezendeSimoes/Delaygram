@@ -28,7 +28,7 @@ public class Cliente {
 
         atualizarSubscricoes();
 
-        System.out.println("Cliente - 0");
+        System.out.println("Cliente - 7");
 
         while (true) {
             exibirMailbox();
